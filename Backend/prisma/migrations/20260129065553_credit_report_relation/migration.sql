@@ -1,0 +1,94 @@
+-- CreateTable
+CREATE TABLE `User` (
+    `id` VARCHAR(191) NOT NULL,
+    `mobile` VARCHAR(191) NOT NULL,
+    `email` VARCHAR(191) NULL,
+    `role` ENUM('SUPER_ADMIN', 'ADMIN', 'OPS_MANAGER', 'OPS_EXECUTIVE', 'SALES', 'FINANCE', 'COMPLIANCE', 'USER') NOT NULL DEFAULT 'USER',
+    `isActive` BOOLEAN NOT NULL DEFAULT true,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `User_mobile_key`(`mobile`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `CreditReport` (
+    `id` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `bureau` VARCHAR(191) NOT NULL,
+    `rawData` JSON NOT NULL,
+    `pdfUrl` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Case` (
+    `id` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `reportId` VARCHAR(191) NOT NULL,
+    `status` ENUM('CREATED', 'UNDER_REVIEW', 'PAYMENT_PENDING', 'IN_PROGRESS', 'RESOLVED', 'CLOSED') NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Issue` (
+    `id` VARCHAR(191) NOT NULL,
+    `caseId` VARCHAR(191) NOT NULL,
+    `type` VARCHAR(191) NOT NULL,
+    `bureau` VARCHAR(191) NOT NULL,
+    `confidence` VARCHAR(191) NOT NULL,
+    `explanation` VARCHAR(191) NOT NULL,
+    `status` ENUM('OPEN', 'ASSIGNED', 'IN_PROGRESS', 'ESCALATED', 'RESOLVED', 'REJECTED') NOT NULL,
+    `assignedTo` VARCHAR(191) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Payment` (
+    `id` VARCHAR(191) NOT NULL,
+    `caseId` VARCHAR(191) NOT NULL,
+    `amount` INTEGER NOT NULL,
+    `status` ENUM('PENDING', 'SUCCESS', 'FAILED', 'REFUNDED') NOT NULL,
+    `gatewayOrder` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `Payment_caseId_key`(`caseId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `AuditLog` (
+    `id` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NULL,
+    `action` ENUM('LOGIN', 'CREATE', 'UPDATE', 'DELETE', 'ASSIGN', 'STATUS_CHANGE', 'PAYMENT', 'EMAIL') NOT NULL,
+    `entity` VARCHAR(191) NOT NULL,
+    `entityId` VARCHAR(191) NOT NULL,
+    `meta` JSON NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `CreditReport` ADD CONSTRAINT `CreditReport_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Case` ADD CONSTRAINT `Case_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Case` ADD CONSTRAINT `Case_reportId_fkey` FOREIGN KEY (`reportId`) REFERENCES `CreditReport`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Issue` ADD CONSTRAINT `Issue_caseId_fkey` FOREIGN KEY (`caseId`) REFERENCES `Case`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Payment` ADD CONSTRAINT `Payment_caseId_fkey` FOREIGN KEY (`caseId`) REFERENCES `Case`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `AuditLog` ADD CONSTRAINT `AuditLog_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
